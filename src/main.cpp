@@ -39,11 +39,8 @@ int main()
   // TODO: Initialize the pid variable.
   //pid_s.Init(0.16, 0.0001, 1.5);
   pid_s.Init(0.2378, 0.00484, 3.134); //Final
-#ifdef UWS_VCPKG
-  h.onMessage([&pid_s](uWS::WebSocket<uWS::SERVER> *ws, char *data, size_t length, uWS::OpCode opCode) {
-#else
+
   h.onMessage([&pid_s](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
-#endif`
     // "42" at the start of the message mean there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -98,20 +95,13 @@ int main()
           msgJson["throttle"] = speed_value;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
-#ifdef UWS_VCPKG
-          ws->send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-#else
+
 		  ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-#endif
         }
       } else {
         // Manual driving
         std::string msg = "42[\"manual\",{}]";
-#ifdef UWS_VCPKG
-        ws->send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-#else
-		ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-#endif
+        ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
       }
     }
   });
@@ -131,33 +121,19 @@ int main()
     }
   });
 
-#ifdef UWS_VCPKG
-  h.onConnection([&h](uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest req) {
-#else
   h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
-#endif
     std::cout << "Connected!!!" << std::endl;
   });
 
-#ifdef UWS_VCPKG
-  h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> *ws, int code, char *message, size_t length) {
-	  ws->close();
-#else
   h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code, char *message, size_t length) {
 	  ws.close();
-#endif
-    
+   
     std::cout << "Disconnected" << std::endl;
   });
 
   int port = 4567;
-#ifdef UWS_VCPKG
-  if (h.listen("127.0.0.1", port)) 
-  {
-#else
   if (h.listen(port)) 
   {
-#endif
     std::cout << "Listening to port " << port << std::endl;
   }
   else
