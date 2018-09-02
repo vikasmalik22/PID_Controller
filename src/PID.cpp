@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define num 10
+#define Twiddle 1
 
 /*
 * TODO: Complete the PID class.
@@ -24,28 +24,126 @@ void PID::Init(double Kp, double Ki, double Kd) {
 	i_error = 0;
 	d_error = 0;
 
-	v_ierror.assign(num, 0.0);
+	total_error = 0;
+	best_error = std::numeric_limits<double>::max();
+	cur_par = 2;
+	this->p[0] = Kp;
+	this->p[1] = Kd;
+	this->p[2] = Ki;
+
+	iter = 0;
+
+	eval1[0] = false;
+	eval1[1] = false;
+	eval1[2] = false;
+
+	eval2[0] = false;
+	eval2[1] = false;
+	eval2[2] = false;
+
+	// Initialize Twiddle dp values - normalized to be similar to coefficients	
+	dp[0] = Kp * 0.1; //Kp
+	dp[1] = Kd * 0.1; //Kd
+	dp[2] = Ki * 0.1; //Ki
+
+	boInit = false;
+
+	n_settle_steps = 100;
+	n_eval_steps = 1500;
 }
 
 void PID::UpdateError(double cte) {	
-	d_error = cte - p_error;
+
+	if (!boInit)
+	{
+		d_error = 0;
+		boInit = true;
+	}		
+	else
+	{
+		d_error = cte - p_error;
+	}
+		
+
 	p_error = cte;
-	//i_error += cte;
+	i_error += cte;
 
-	//Add the new cte to vector
-	v_ierror.push_back(cte);
+#if(Twiddle == 1)
+	iter++;
+	
+	// update total error only if we're past number of settle steps
+	if ((iter % (n_settle_steps + n_eval_steps)) > n_settle_steps) {
+		total_error += pow(cte, 2);
 
-	//remove the oldest value of cte
-	v_ierror.erase(v_ierror.begin());
+		if (!eval1[cur_par] & !eval2[cur_par])
+		{
+			p[cur_par] += dp[cur_par];
+			eval1[cur_par] = true;
+		}
+	}		
 
-	std::cout << "d_error: " << d_error << " p_error: " << p_error << " i_error: " << i_error << std::endl;
-	std::cout << " " << std::endl;
+	if (iter % (n_settle_steps + n_eval_steps) == 0)
+	{
+		if (eval1[cur_par] & !eval2[cur_par])
+		{
+			if ((total_error < best_error))
+			{
+				//cout << "improvement!" << endl;
+				best_error = total_error;
+				dp[cur_par] *= 1.1;
+				eval2[cur_par] = true;
+			}
+			else
+			{
+				p[cur_par] -= 2 * dp[cur_par];
+				eval1[cur_par] = false;
+				eval2[cur_par] = true;
+				//cout << "No improvement-Reduced!" << endl;
+			}
+		}
+		else if (!eval1[cur_par] & eval2[cur_par])
+		{
+			if ((total_error < best_error))
+			{
+				//cout << "Improvement!" << endl;
+				best_error = total_error;
+				dp[cur_par] *= 1.1;
+				eval1[cur_par] = true;
+			}
+			else
+			{
+				p[cur_par] += dp[cur_par];
+				dp[cur_par] *= 0.9;
+				eval1[cur_par] = true;
+				//cout << "No improvement-Reduced!" << endl;
+			}
+		}	
+		
+
+		total_error = 0;
+
+		if (eval1[cur_par] & eval2[cur_par])
+		{
+			eval1[cur_par] = false;
+			eval2[cur_par] = false;
+			cur_par = (cur_par + 1) % 3;
+		}		
+
+		//std::cout << "cur_par " << cur_par << std::endl;
+		//std::cout << "Kp " << p[0] << " Kd " << p[1] << " Ki " << p[2] << std::endl;
+	}
+
+	std::cout << "iter " << iter << std::endl;
+#endif
 }
 
 double PID::TotalError() {
 	
-	for (int j = 0; j < v_ierror.size(); j++)
-		i_error += v_ierror[j];
+#if(Twiddle == 1)
+	Kp = p[0];
+	Kd = p[1];
+	Ki = p[2];
+#endif
 
-	return (Kp * p_error) + (Kd * d_error) + (Ki * i_error);
+	return -(Kp * p_error) - (Kd * d_error) - (Ki * i_error);
 }
