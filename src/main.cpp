@@ -42,7 +42,7 @@ int main()
 #ifdef UWS_VCPKG
   h.onMessage([&pid_s](uWS::WebSocket<uWS::SERVER> *ws, char *data, size_t length, uWS::OpCode opCode) {
 #else
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  h.onMessage([&pid_s](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
 #endif`
     // "42" at the start of the message mean there's a websocket message event.
     // The 4 signifies a websocket message
@@ -61,7 +61,8 @@ int main()
           double steer_value;
 		  double speed_value;
 
-		  ofstream out_file_("output.txt", ios::out | ios::app);
+      //Data Logging
+		  //ofstream out_file_("output.txt", ios::out | ios::app);
           /*
           * TODO: Calcuate steering value here, remember the steering value is
           * [-1, 1].
@@ -75,35 +76,28 @@ int main()
 		  speed_value = 0.3;
 
 		  //Logging the data in ouput.txt file for Visualization
-		  out_file_ << "steering angle" << "\n";
-		  out_file_ << cte << "\t";
-		  out_file_ << steer_value << "\n";
-		  out_file_ << pid_s.Kp << "\t";
-		  out_file_ << pid_s.Ki << "\t";
-		  out_file_ << pid_s.Kd << "\n";
+		  // out_file_ << "steering angle" << "\n";
+		  // out_file_ << cte << "\t";
+		  // out_file_ << steer_value << "\n";
+		  // out_file_ << pid_s.Kp << "\t";
+		  // out_file_ << pid_s.Ki << "\t";
+		  // out_file_ << pid_s.Kd << "\n";
 
-		  out_file_ << pid_s.cur_par << "\t";
-		  out_file_ << pid_s.iter << "\t";
-		  out_file_ << pid_s.total_error << "\t";
-		  out_file_ << pid_s.best_error << "\n";
-
-		  out_file_ << "throttle" << "\n";
-
-		  out_file_ << pid_t.Kp << "\t";
-		  out_file_ << pid_t.Ki << "\t";
-		  out_file_ << pid_t.Kd << "\n";
-
-		  out_file_.close();
+		  // out_file_ << pid_s.cur_par << "\t";
+		  // out_file_ << pid_s.iter << "\t";
+		  // out_file_ << pid_s.total_error << "\t";
+		  // out_file_ << pid_s.best_error << "\n";
+		  //out_file_.close();
 
           // DEBUG
-          //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
-		  //std::cout << "CTE: " << abs(cte) << " Speed Value: " << speed_value << std::endl;		  
+          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+		      std::cout << "CTE: " << abs(cte) << " Speed Value: " << speed_value << std::endl;		  
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = speed_value;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          //std::cout << msg << std::endl;
+          std::cout << msg << std::endl;
 #ifdef UWS_VCPKG
           ws->send(msg.data(), msg.length(), uWS::OpCode::TEXT);
 #else
